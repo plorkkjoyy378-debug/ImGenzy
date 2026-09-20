@@ -3,11 +3,324 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ChatGPT Clone (Khmer & English)</title>
-    <!-- Link to external CSS stylesheet -->
-    <link rel="stylesheet" href="style.css">
-    <!-- FontAwesome for Icons -->
+    <title>ChatGPT Clone - Khmer & English</title>
+    <!-- FontAwesome Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* Reset & Variables */
+        * {
+          box-sizing: border-box;
+          margin: 0;
+          padding: 0;
+          font-family: 'Inter', 'Battambang', sans-serif;
+        }
+
+        :root {
+          --bg-sidebar: #202123;
+          --bg-main: #343541;
+          --bg-input: #40414f;
+          --text-main: #ececf1;
+          --text-muted: #8e8ea0;
+          --accent-color: #10a37f;
+          --border-color: #4d4d4f;
+        }
+
+        body {
+          background-color: var(--bg-main);
+          color: var(--text-main);
+          height: 100vh;
+          overflow: hidden;
+        }
+
+        .app-container {
+          display: flex;
+          height: 100vh;
+          width: 100vw;
+        }
+
+        /* Sidebar Styling */
+        .sidebar {
+          width: 260px;
+          background-color: var(--bg-sidebar);
+          display: flex;
+          flex-direction: column;
+          transition: transform 0.3s ease;
+          z-index: 10;
+        }
+
+        .sidebar.collapsed {
+          transform: translateX(-100%);
+          position: absolute;
+          height: 100%;
+        }
+
+        .sidebar-top {
+          padding: 10px;
+        }
+
+        .new-chat-btn {
+          width: 100%;
+          padding: 10px 12px;
+          background: transparent;
+          border: 1px solid var(--border-color);
+          color: var(--text-main);
+          border-radius: 6px;
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          font-size: 14px;
+          cursor: pointer;
+          transition: background 0.2s;
+        }
+
+        .new-chat-btn:hover {
+          background: rgba(255, 255, 255, 0.05);
+        }
+
+        .chat-history-list {
+          flex: 1;
+          overflow-y: auto;
+          padding: 10px;
+          display: flex;
+          flex-direction: column;
+          gap: 4px;
+        }
+
+        .sidebar-footer {
+          padding: 12px;
+          border-top: 1px solid var(--border-color);
+        }
+
+        .user-profile {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          font-size: 14px;
+        }
+
+        .avatar {
+          width: 30px;
+          height: 30px;
+          background: #5436da;
+          border-radius: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 14px;
+        }
+
+        /* Main Chat Window */
+        .main-content {
+          flex: 1;
+          display: flex;
+          flex-direction: column;
+          height: 100%;
+          position: relative;
+        }
+
+        .chat-header {
+          height: 50px;
+          display: flex;
+          align-items: center;
+          padding: 0 16px;
+          border-bottom: 1px solid var(--border-color);
+          background-color: var(--bg-main);
+        }
+
+        .toggle-sidebar-btn {
+          background: none;
+          border: none;
+          color: var(--text-main);
+          font-size: 18px;
+          cursor: pointer;
+          padding: 6px 10px;
+          border-radius: 4px;
+        }
+
+        .toggle-sidebar-btn:hover {
+          background: rgba(255, 255, 255, 0.05);
+        }
+
+        .model-selector {
+          margin-left: 10px;
+          font-weight: 600;
+          font-size: 15px;
+          color: var(--text-muted);
+        }
+
+        /* Messages Area */
+        .chat-messages {
+          flex: 1;
+          overflow-y: auto;
+          padding-bottom: 120px;
+        }
+
+        /* Welcome Screen */
+        .welcome-container {
+          max-width: 600px;
+          margin: 80px auto 0;
+          padding: 0 20px;
+          text-align: center;
+        }
+
+        .welcome-container h1 {
+          font-size: 32px;
+          margin-bottom: 8px;
+          color: var(--text-main);
+        }
+
+        .subtitle {
+          color: var(--text-muted);
+          font-size: 16px;
+          margin-bottom: 30px;
+        }
+
+        .suggestion-grid {
+          display: grid;
+          grid-template-columns: repeat(2, 1fr);
+          gap: 12px;
+        }
+
+        .suggestion-card {
+          background: rgba(255, 255, 255, 0.03);
+          border: 1px solid var(--border-color);
+          padding: 16px;
+          border-radius: 8px;
+          text-align: left;
+          cursor: pointer;
+          display: flex;
+          flex-direction: column;
+          gap: 8px;
+          transition: background 0.2s;
+        }
+
+        .suggestion-card:hover {
+          background: rgba(255, 255, 255, 0.06);
+        }
+
+        .suggestion-card i {
+          color: var(--accent-color);
+          font-size: 18px;
+        }
+
+        .suggestion-card span {
+          font-size: 13px;
+          color: var(--text-main);
+        }
+
+        /* Chat Bubbles */
+        .message-row {
+          padding: 20px 0;
+          display: flex;
+          justify-content: center;
+          border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .message-row.user {
+          background-color: var(--bg-main);
+        }
+
+        .message-row.assistant {
+          background-color: rgba(68, 70, 84, 0.5);
+        }
+
+        .message-content {
+          width: 100%;
+          max-width: 768px;
+          display: flex;
+          gap: 16px;
+          padding: 0 20px;
+        }
+
+        .msg-avatar {
+          width: 32px;
+          height: 32px;
+          border-radius: 2px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 14px;
+        }
+
+        .message-row.user .msg-avatar {
+          background-color: #5436da;
+        }
+
+        .message-row.assistant .msg-avatar {
+          background-color: var(--accent-color);
+        }
+
+        .msg-text {
+          flex: 1;
+          font-size: 15px;
+          line-height: 1.6;
+          white-space: pre-wrap;
+          word-break: break-word;
+        }
+
+        /* Input Footer */
+        .chat-input-area {
+          position: absolute;
+          bottom: 0;
+          left: 0;
+          width: 100%;
+          background: linear-gradient(180deg, rgba(53,53,65,0) 0%, var(--bg-main) 40%);
+          padding: 20px;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+        }
+
+        .input-wrapper {
+          width: 100%;
+          max-width: 768px;
+          background-color: var(--bg-input);
+          border: 1px solid var(--border-color);
+          border-radius: 12px;
+          display: flex;
+          align-items: flex-end;
+          padding: 10px 14px;
+          box-shadow: 0 0 15px rgba(0,0,0,0.1);
+        }
+
+        .input-wrapper textarea {
+          flex: 1;
+          background: transparent;
+          border: none;
+          color: var(--text-main);
+          font-size: 15px;
+          resize: none;
+          max-height: 200px;
+          outline: none;
+          line-height: 1.5;
+        }
+
+        .input-wrapper button {
+          background-color: var(--accent-color);
+          border: none;
+          color: white;
+          width: 32px;
+          height: 32px;
+          border-radius: 6px;
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          transition: opacity 0.2s;
+          margin-bottom: 2px;
+        }
+
+        .input-wrapper button:hover {
+          opacity: 0.9;
+        }
+
+        .disclaimer {
+          font-size: 11px;
+          color: var(--text-muted);
+          margin-top: 10px;
+          text-align: center;
+        }
+    </style>
 </head>
 <body>
 
@@ -19,9 +332,7 @@
                     <i class="fa-solid fa-plus"></i> សន្ទនាថ្មី (New Chat)
                 </button>
             </div>
-            <div class="chat-history-list" id="chatHistoryList">
-                <!-- Chat history items injected via JS -->
-            </div>
+            <div class="chat-history-list" id="chatHistoryList"></div>
             <div class="sidebar-footer">
                 <div class="user-profile">
                     <div class="avatar"><i class="fa-solid fa-user"></i></div>
@@ -32,19 +343,16 @@
 
         <!-- Main Chat Area -->
         <main class="main-content">
-            <!-- Top Header -->
             <header class="chat-header">
                 <button class="toggle-sidebar-btn" onclick="toggleSidebar()">
                     <i class="fa-solid fa-bars"></i>
                 </button>
                 <div class="model-selector">
-                    <span>ChatGPT (Gemini AI)</span>
+                    <span>ChatGPT (Khmer AI Assistant)</span>
                 </div>
             </header>
 
-            <!-- Chat Message Window -->
             <div class="chat-messages" id="chatMessages">
-                <!-- Welcome View (Shown when no messages exist) -->
                 <div class="welcome-container" id="welcomeContainer">
                     <h1>តើខ្ញុំអាចជួយអ្វីអ្នកថ្ងៃនេះ?</h1>
                     <p class="subtitle">សួរអ្វីក៏បានជាភាសាខ្មែរ ឬអង់គ្លេស...</p>
@@ -69,10 +377,9 @@
                 </div>
             </div>
 
-            <!-- Input Form Footer -->
             <div class="chat-input-area">
                 <div class="input-wrapper">
-                    <textarea id="userInput" placeholder="ផ្ញើសារទៅកាន់ ChatGPT..." rows="1" oninput="autoResize(this)"></textarea>
+                    <textarea id="userInput" placeholder="ផ្ើសារទៅកាន់ ChatGPT..." rows="1" oninput="autoResize(this)"></textarea>
                     <button id="sendBtn" onclick="handleSendMessage()">
                         <i class="fa-solid fa-paper-plane"></i>
                     </button>
@@ -84,7 +391,95 @@
         </main>
     </div>
 
-    <!-- Link to external JavaScript file -->
-    <script src="script.js"></script>
+    <script>
+        const chatMessages = document.getElementById('chatMessages');
+        const welcomeContainer = document.getElementById('welcomeContainer');
+        const userInput = document.getElementById('userInput');
+        const sidebar = document.getElementById('sidebar');
+
+        function autoResize(textarea) {
+          textarea.style.height = 'auto';
+          textarea.style.height = Math.min(textarea.scrollHeight, 200) + 'px';
+        }
+
+        function toggleSidebar() {
+          sidebar.classList.toggle('collapsed');
+        }
+
+        function startNewChat() {
+          welcomeContainer.style.display = 'block';
+          const rows = chatMessages.querySelectorAll('.message-row');
+          rows.forEach(row => row.remove());
+        }
+
+        function sendSuggestion(text) {
+          userInput.value = text;
+          handleSendMessage();
+        }
+
+        function handleSendMessage() {
+          const text = userInput.value.trim();
+          if (!text) return;
+
+          if (welcomeContainer.style.display !== 'none') {
+            welcomeContainer.style.display = 'none';
+          }
+
+          userInput.value = '';
+          userInput.style.height = 'auto';
+
+          appendMessage(text, 'user');
+
+          setTimeout(() => {
+            generateSimulatedAIResponse(text);
+          }, 600);
+        }
+
+        function appendMessage(text, sender) {
+          const row = document.createElement('div');
+          row.className = `message-row ${sender}`;
+
+          const content = document.createElement('div');
+          content.className = 'message-content';
+
+          const avatar = document.createElement('div');
+          avatar.className = 'msg-avatar';
+          avatar.innerHTML = sender === 'user' ? '<i class="fa-solid fa-user"></i>' : '<i class="fa-solid fa-robot"></i>';
+
+          const msgText = document.createElement('div');
+          msgText.className = 'msg-text';
+          msgText.innerText = text;
+
+          content.appendChild(avatar);
+          content.appendChild(msgText);
+          row.appendChild(content);
+
+          chatMessages.appendChild(row);
+          chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        function generateSimulatedAIResponse(userText) {
+          let reply = '';
+          
+          if (userText.includes('HTML') || userText.includes('កូដ')) {
+            reply = 'បាទ/ចាស៎! HTML (HyperText Markup Language) គឺជាភាសាគ្រឹះសម្រាប់បង្កើតโครงสร้างទំព័រเว็บ។ ឧទាហរណ៍កូដសាមញ្ញ:\n\n<!DOCTYPE html>\n<html>\n  <head><title>Page</title></head>\n  <body><h1>Hello World</h1></body>\n</html>';
+          } else if (userText.includes('អាជីវកម្ម') || userText.includes('business')) {
+            reply = 'គំនិតអាជីវកម្មអនឡាញល្អៗរួមមាន៖ ១. ការលក់ទំនិញតាមរយៈ Live Stream ផ្ទាល់ ២. សេវាកម្មរចនាគេហទំព័រ ឬ Graphic Design ៣. ការបង្កើតមាតិកាអប់រំតាម YouTube ឬ TikTok។';
+          } else if (userText.includes('ភាសាអង់គ្លេស') || userText.includes('English')) {
+            reply = 'ដើម្បីរៀនភាសាអង់គ្លេសឱ្យបានលឿន៖ ត្រូវហាត់ស្តាប់បទចម្រៀង ឬវីដេអូអង់គ្លេសជារៀងរាល់ថ្ងៃ, អានសៀវភៅកម្រិតងាយៗ, និងហ៊ាននិយាយទោះបីជាខុសវេយ្យាករណ៍ក៏ដោយ។';
+          } else {
+            reply = `ខ្ញុំបានយល់សំណួររបស់អ្នកហើយ៖ "${userText}"។ ក្នុងនាមជា ChatGPT Clone ខ្ញុំត្រៀមខ្លួនជាស្រេចដើម្បីជួយលោកអ្នកបន្ថែមទៀត!`;
+          }
+
+          appendMessage(reply, 'assistant');
+        }
+
+        userInput.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            handleSendMessage();
+          }
+        });
+    </script>
 </body>
 </html>
